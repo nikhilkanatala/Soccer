@@ -47,9 +47,6 @@ class AzureDBConn():
         self.cursor.executemany(query, df.values.tolist())
         self.connection.commit()
         
-        self.merge_staging_to_production(table_name)
-        self.connection.commit()
-        
     def merge_staging_to_production(self, table_name):
         """
         Merge the staging table to the production table.
