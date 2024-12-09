@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project implements an ETL (Extract, Transform, Load) pipeline to process data from the American Soccer Analysis (ASA) API and store it in an Azure database. The pipeline supports advanced analytics on team and player performance, salary trends, and match statistics. The project incorporates modular design principles to ensure scalability and adaptability for additional data sources or processing requirements.
+This project is an ETL (Extract, Transform, Load) pipeline that collects MLS soccer data from the American Soccer Analysis (ASA) public API and stores it in an Azure database. The code is organized in modules, making it easy to add new data sources or change how data is processed. While it's set up for MLS data, you can easily adapt it to fetch data for other leagues that ASA provides. This project gives you a good starting point if you want to work with soccer data and analytics.  
 
 ---
 
