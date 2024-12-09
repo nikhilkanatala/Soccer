@@ -189,6 +189,7 @@ def load_games(start_date=None, end_date=None, year=None, game_id=None):
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to GAMES table...")
             conn.insert_dataframe_to_staging(df_games, 'GAMES')
+            conn.merge_staging_to_production('GAMES')
             logging.info(f"Data inserted successfully to GAMES table.")
 
     logging.info(f"Games loaded successfully.")
@@ -219,6 +220,7 @@ def load_game_xgoals(start_date=None, end_date=None, year=None, game_id=None):
                 df=df_xgoals,
                 table_name = 'GAMES_XGOALS'
             )
+            conn.merge_staging_to_production('GAMES_XGOALS')
             logging.info(f"Data inserted successfully to GAME_XGOALS table.")
     
     logging.info(f"Game xgoals loaded successfully.")
@@ -241,6 +243,7 @@ def load_teams(team_id=None):
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to TEAMS table...")
             conn.insert_dataframe_to_staging(df_teams, 'TEAMS')
+            conn.merge_staging_to_production('TEAMS')
             logging.info(f"Data inserted successfully to TEAMS table.")
             
     logging.info(f"Teams loaded successfully.")
@@ -263,6 +266,7 @@ def load_team_salaries(split_by='teams', year=None, team_id=None):
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to TEAMS_SALARIES table...")
             conn.insert_dataframe_to_staging(df_salaries, 'TEAMS_SALARIES')
+            conn.merge_staging_to_production('TEAMS_SALARIES')
             logging.info(f"Data inserted successfully to TEAMS_SALARIES table.")
     
     logging.info(f"Team salaries loaded successfully.")
@@ -295,6 +299,7 @@ def load_managers():
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to MANAGERS table...")
             conn.insert_dataframe_to_staging(df_managers, 'MANAGERS')
+            conn.merge_staging_to_production('MANAGERS')
             logging.info(f"Data inserted successfully to MANAGERS table.")
         
     logging.info(f"Managers loaded successfully.")
@@ -317,6 +322,7 @@ def load_referees():
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to REFEREES table...")
             conn.insert_dataframe_to_staging(df_refrees, 'REFEREES')
+            conn.merge_staging_to_production('REFEREES')
             logging.info(f"Data inserted successfully to REFEREES table.")
 
     logging.info(f"Referees loaded successfully.")
@@ -339,6 +345,7 @@ def load_stadiums():
         with AzureDBConn() as conn:
             logging.info(f"Inserting data to STADIUMS table...")
             conn.insert_dataframe_to_staging(df_stadiums, 'STADIUMS')
+            conn.merge_staging_to_production('STADIUMS')
             logging.info(f"Data inserted successfully to STADIUMS table.")
             
     logging.info(f"Stadiums loaded successfully.")
