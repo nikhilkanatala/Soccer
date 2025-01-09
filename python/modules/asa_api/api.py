@@ -170,6 +170,40 @@ def get_players(player_id=None):
     logging.info(f"Players retrieved: {df_players.shape[0]}")
     return df_players
 
+def get_player_xgoals(start_date = None, end_date = None, year=None, player_id=None):
+    """
+    Get player expected goals for a given season or player_id and/or date range
+    """
+    logging.info(f"Fetching player expected goals...")
+    if (start_date and not end_date) or (end_date and not start_date):
+        msg = f'''
+        The API requires the following parameters to be set: start_date, end_date.
+        Please set these parameters as expected or try other parameters (year, player_id)
+        '''
+        logging.error(msg)
+        raise ValueError(msg)
+    
+    url = MLS_BASE_URL + END_POINTS['players'][1]
+    response = requests.get(
+        url,
+        params={
+            'season_name': year,
+            'player_id': player_id,
+            'start_date': start_date,
+            'end_date': end_date
+        }
+    )
+    
+    # catch bad requests
+    if response.status_code != 200:
+        msg = f"Bad HTTP response code: {response.status_code}, received {response.text}"
+        logging.error(msg)
+        raise HTTPError(url, response.status_code, msg, None, None)
+
+    df_player_xgoals = pd.json_normalize(response.json())
+    logging.info(f"Player expected goals retrieved: {df_player_xgoals.shape[0]}")
+    return df_player_xgoals
+
 def get_player_salaries(start_date = None, end_date = None, year=None, position=None, player_id=None):
     """
     Get player salaries for a given season or player_id and/or date range
