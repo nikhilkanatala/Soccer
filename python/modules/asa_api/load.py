@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from modules.asa_api.api import (get_games, get_game_xgoals, get_teams,
                  get_team_salaries, get_players, get_player_salaries,
-                 get_managers, get_referees, get_stadiums)
+                 get_player_xgoals, get_managers, get_referees, get_stadiums)
 from modules.utils.db import AzureDBConn
 
 
@@ -275,9 +275,30 @@ def load_players(player_id=None):
     """
     Load players data from ASA API to Azure DB
     """
-    df = get_players(player_id)
+    df_players = get_players(player_id)
+    df_players = set_cols(df_players, PLAYER_COLS)
+
+    # clean data and transform
+    logging.info(f"Cleaning and transforming data...")
+    df_players = clean_data_and_transform(df_players, ['PLAYER_ID'])
     
-    if len(df) > 0:
+    if len(df_players) > 0:
+        # Load data to Azure DB
+        logging.info(f"Connecting to Azure DB...")
+        with AzureDBConn() as conn:
+            logging.info(f"Inserting data to PLAYERS table...")
+            conn.insert_dataframe_to_staging(df_players, 'PLAYERS')
+            conn.merge_staging_to_production('PLAYERS')
+            logging.info(f"Data inserted successfully to PLAYERS table.")
+
+def load_player_xgoals():
+    """
+    Load player xgoals data from ASA API to Azure DB
+    """
+
+    df_player_xgoals = get_player_xgoals()
+
+    if len(df_player_xgoals) > 0:
         # Load data to Azure DB
         pass
 
