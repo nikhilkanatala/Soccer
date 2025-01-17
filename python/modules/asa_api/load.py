@@ -81,6 +81,28 @@ PLAYER_COLS = {
     'end_season': 'END_SEASON'
 }
 
+PLAYER_XGOAL_COLS = {
+    'player_id': 'PLAYER_ID',
+    'date_time_utc': 'DATE_TIME_UTC',
+    'team_id': 'TEAM_ID',
+    'general_position': 'GENERAL_POSITION',
+    'minutes_played': 'MINUTES_PLAYED',
+    'shots': 'SHOTS',
+    'shots_on_target': 'SHOTS_ON_TARGET',
+    'goals': 'GOALS',
+    'xgoals': 'XGOALS',
+    'xplace': 'XPLACE',
+    'goals_minus_xgoals': 'GOALS_MINUS_XGOALS',
+    'key_passes': 'KEY_PASSES',
+    'primary_assists': 'PRIMARY_ASSISTS',
+    'xassists': 'XASSISTS',
+    'primary_assists_minus_xassists': 'PRIMARY_ASSISTS_MINUS_XASSISTS',
+    'goals_plus_primary_assists': 'GOALS_PLUS_PRIMARY_ASSISTS',
+    'xgoals_plus_xassists': 'XGOALS_PLUS_XASSISTS',
+    'points_added': 'POINTS_ADDED',
+    'xpoints_added': 'XPOINTS_ADDED'
+}
+
 MANAGER_COLS = {
     'manager_id': 'MANAGER_ID',
     'manager_name': 'MANAGER_NAME',
@@ -297,10 +319,20 @@ def load_player_xgoals():
     """
 
     df_player_xgoals = get_player_xgoals()
+    df_player_xgoals = set_cols(df_player_xgoals, PLAYER_XGOAL_COLS)
+
+    # clean data and transform
+    logging.info(f"Cleaning and transforming data...")
+    df_player_xgoals = clean_data_and_transform(df_player_xgoals, ['PLAYER_ID'])
 
     if len(df_player_xgoals) > 0:
         # Load data to Azure DB
-        pass
+        logging.info(f"Connecting to Azure DB...")
+        with AzureDBConn() as conn:
+            logging.info(f"Inserting data to PLAYER_XGOALS table...")
+            conn.insert_dataframe_to_staging(df_player_xgoals, 'PLAYER_XGOALS')
+            conn.merge_staging_to_production('PLAYER_XGOALS')
+            logging.info(f"Data inserted successfully to PLAYER_XGOALS table.")
 
 def load_managers():
     """
