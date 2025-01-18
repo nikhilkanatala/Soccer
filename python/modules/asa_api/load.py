@@ -7,7 +7,8 @@ import pandas as pd
 import numpy as np
 from modules.asa_api.api import (get_games, get_game_xgoals, get_teams,
                  get_team_salaries, get_players, get_player_salaries,
-                 get_player_xgoals, get_managers, get_referees, get_stadiums)
+                 get_player_xgoals, get_player_xpass, get_managers, 
+                 get_referees, get_stadiums)
 from modules.utils.db import AzureDBConn
 
 
@@ -101,6 +102,22 @@ PLAYER_XGOAL_COLS = {
     'xgoals_plus_xassists': 'XGOALS_PLUS_XASSISTS',
     'points_added': 'POINTS_ADDED',
     'xpoints_added': 'XPOINTS_ADDED'
+}
+
+PLAYER_XPASS_COLS = {
+    'player_id': 'PLAYER_ID',
+    'team_id': 'TEAM_ID',
+    'general_position': 'GENERAL_POSITION',
+    'minutes_played': 'MINUTES_PLAYED',
+    'attempted_passes': 'ATTEMPTED_PASSES',
+    'pass_completion_percentage': 'PASS_COMPLETION_PERCENTAGE',
+    'xpass_completion_percentage': 'XPASS_COMPLETION_PERCENTAGE',
+    'passes_completed_over_expected': 'PASSES_COMPLETED_OVER_EXPECTED',
+    'passes_completed_over_expected_p100': 'PASSES_COMPLETED_OVER_EXPECTED_P100',
+    'avg_distance_yds': 'AVG_DISTANCE_YDS',
+    'avg_vertical_distance_yds': 'AVG_VERTICAL_DISTANCE_YDS',
+    'share_team_touches': 'SHARE_TEAM_TOUCHES',
+    'count_games': 'COUNT_GAMES'
 }
 
 MANAGER_COLS = {
@@ -313,12 +330,18 @@ def load_players(player_id=None):
             conn.merge_staging_to_production('PLAYERS')
             logging.info(f"Data inserted successfully to PLAYERS table.")
 
-def load_player_xgoals():
+def load_player_xgoals(year=None, player_id=None, start_date=None, end_date=None, team_id=None):
     """
     Load player xgoals data from ASA API to Azure DB
     """
 
-    df_player_xgoals = get_player_xgoals()
+    if year is not None:
+        logging.info(f"Loading player xgoals for the year: {year}")
+        df_player_xgoals = get_player_xgoals(year=year, player_id=player_id, team_id=team_id)
+    else:
+        logging.info(f"Loading player xgoals...")
+        df_player_xgoals = get_player_xgoals(start_date, end_date, player_id, team_id)
+
     df_player_xgoals = set_cols(df_player_xgoals, PLAYER_XGOAL_COLS)
 
     # clean data and transform
@@ -333,6 +356,33 @@ def load_player_xgoals():
             conn.insert_dataframe_to_staging(df_player_xgoals, 'PLAYER_XGOALS')
             conn.merge_staging_to_production('PLAYER_XGOALS')
             logging.info(f"Data inserted successfully to PLAYER_XGOALS table.")
+
+def load_player_xpass(year=None, player_id=None, team_id=None, start_date=None, end_date=None):
+    """
+    Load player xpass data from ASA API to Azure DB
+    """
+
+    if year is not None:
+        logging.info(f"Loading player xpass for the year: {year}")
+        df_player_xpass = get_player_xpass(year=year, player_id=player_id, team_id=team_id)
+    else:
+        logging.info(f"Loading player xpass...")
+        df_player_xpass = get_player_xpass(start_date, end_date, player_id, team_id)
+        
+    df_player_xpass = set_cols(df_player_xpass, PLAYER_XPASS_COLS)
+
+    # clean data and transform
+    logging.info(f"Cleaning and transforming data...")
+    df_player_xpass = clean_data_and_transform(df_player_xpass, ['PLAYER_ID'])
+
+    if len(df_player_xpass) > 0:
+        # Load data to Azure DB
+        logging.info(f"Connecting to Azure DB...")
+        with AzureDBConn() as conn:
+            logging.info(f"Inserting data to PLAYER_XPASS table...")
+            conn.insert_dataframe_to_staging(df_player_xpass, 'PLAYER_XPASS')
+            conn.merge_staging_to_production('PLAYER_XPASS')
+            logging.info(f"Data inserted successfully to PLAYER_XPASS table.")
 
 def load_managers():
     """
@@ -419,6 +469,8 @@ def historical_load(year):
     logging.info(f"Loading historical data for the year: {year}")
     load_games(year=year)
     load_game_xgoals(year=year)
+    load_player_xgoals()
+    load_player_xpass()
     load_team_salaries(year=year)
     # load_player_salaries(year=year)
     logging.info(f"Loaded historical data for the year: {year}")
@@ -432,7 +484,9 @@ def load_all():
     load_game_xgoals()
     load_teams()
     load_team_salaries()
-    # load_players()
+    load_players()
+    load_player_xgoals()
+    load_player_xpass()
     load_managers()
     load_referees()
     load_stadiums()
