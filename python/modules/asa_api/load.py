@@ -7,8 +7,8 @@ import pandas as pd
 import numpy as np
 from modules.asa_api.api import (get_games, get_game_xgoals, get_teams,
                  get_team_salaries, get_players, get_player_salaries,
-                 get_player_xgoals, get_player_xpass, get_managers, 
-                 get_referees, get_stadiums)
+                 get_player_xgoals, get_player_xpass, get_player_goals_added,
+                 get_managers, get_referees, get_stadiums)
 from modules.utils.db import AzureDBConn
 
 
@@ -118,6 +118,17 @@ PLAYER_XPASS_COLS = {
     'avg_vertical_distance_yds': 'AVG_VERTICAL_DISTANCE_YDS',
     'share_team_touches': 'SHARE_TEAM_TOUCHES',
     'count_games': 'COUNT_GAMES'
+}
+
+PLAYER_GOALS_ADDED_COLS = {
+    'player_id': 'PLAYER_ID',
+    'team_id': 'TEAM_ID',
+    'general_position': 'GENERAL_POSITION',
+    'minutes_played': 'MINUTES_PLAYED',
+    'action_type': 'ACTION_TYPE',
+    'goals_added_raw': 'GOALS_ADDED_RAW',
+    'goals_added_above_avg': 'GOALS_ADDED_ABOVE_AVG',
+    'count_actions': 'COUNT_ACTIONS'
 }
 
 MANAGER_COLS = {
@@ -368,7 +379,7 @@ def load_player_xpass(year=None, player_id=None, team_id=None, start_date=None, 
     else:
         logging.info(f"Loading player xpass...")
         df_player_xpass = get_player_xpass(start_date, end_date, player_id, team_id)
-        
+
     df_player_xpass = set_cols(df_player_xpass, PLAYER_XPASS_COLS)
 
     # clean data and transform
@@ -383,6 +394,33 @@ def load_player_xpass(year=None, player_id=None, team_id=None, start_date=None, 
             conn.insert_dataframe_to_staging(df_player_xpass, 'PLAYER_XPASS')
             conn.merge_staging_to_production('PLAYER_XPASS')
             logging.info(f"Data inserted successfully to PLAYER_XPASS table.")
+
+def load_player_goals_added(year=None, player_id=None, team_id=None):
+    """
+    Load player goals added data from ASA API to Azure DB
+    """
+
+    if year is not None:
+        logging.info(f"Loading player goals added for the year: {year}")
+        df_player_goals_added = get_player_goals_added(year=year, player_id=player_id, team_id=team_id)
+    else:
+        logging.info(f"Loading player goals added...")
+        df_player_goals_added = get_player_goals_added(player_id=player_id, team_id=team_id)
+
+    df_player_goals_added = set_cols(df_player_goals_added, PLAYER_GOALS_ADDED_COLS)
+
+    # clean data and transform
+    logging.info(f"Cleaning and transforming data...")
+    df_player_goals_added = clean_data_and_transform(df_player_goals_added, ['PLAYER_ID'])
+
+    if len(df_player_goals_added) > 0:
+        # Load data to Azure DB
+        logging.info(f"Connecting to Azure DB...")
+        with AzureDBConn() as conn:
+            logging.info(f"Inserting data to PLAYER_GOALS_ADDED table...")
+            conn.insert_dataframe_to_staging(df_player_goals_added, 'PLAYER_GOALS_ADDED')
+            conn.merge_staging_to_production('PLAYER_GOALS_ADDED')
+            logging.info(f"Data inserted successfully to PLAYER_GOALS_ADDED table.")
 
 def load_managers():
     """
