@@ -58,4 +58,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # load(start_date='2024-12-05', end_date='2024-12-08')

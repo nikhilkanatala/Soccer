@@ -238,7 +238,7 @@ def get_player_xpass(start_date = None, end_date = None, year=None, player_id=No
     logging.info(f"Player expected assists retrieved: {df_player_xpass.shape[0]}")
     return df_player_xpass
 
-def get_players_goals_added(start_date = None, end_date = None, year=None, player_id=None):
+def get_player_goals_added(start_date = None, end_date = None, year=None, player_id=None):
     """
     Get player goals added for a given season or player_id and/or date range
     """
